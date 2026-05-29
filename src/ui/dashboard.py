@@ -1,4 +1,5 @@
 # 数据标注质检 Agent - Streamlit 看板
+import io
 import os
 import sys
 
@@ -86,7 +87,7 @@ st.caption("基于规则引擎 + LLM 推理的机器人标注数据自动审查�
 if st.session_state.csv_text:
     with st.expander("原始数据预览", expanded=False):
         try:
-            df = pd.read_csv(pd.io.common.StringIO(st.session_state.csv_text))
+            df = pd.read_csv(io.StringIO(st.session_state.csv_text), on_bad_lines='skip')
             st.dataframe(df, use_container_width=True, height=200)
         except Exception:
             st.warning("无法解析 CSV")
