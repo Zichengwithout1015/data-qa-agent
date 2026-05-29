@@ -22,7 +22,7 @@ IMG_0020,indoor,flat,bright,none,yes,0.97,张三,连续4条相同-标注员可�
 IMG_0021,indoor,flat,,,,,张三,缺失字段
 IMG_0022,outdoor,flat,bright,none,yes,1.50,张三,confidence超范围
 IMG_0023,tunnel,flat,bright,none,yes,0.88,李四,隧道强光-可能出口处
-IMG_0024,stairs,,,none,yes,0.91,??,??????-???
+IMG_0024,stairs,,,none,yes,0.91,李四,楼梯无障碍物-需确认
 IMG_0025,indoor,flat,bright,none,yes,0.94,张三,正常
 IMG_0026,unknown,flat,bright,none,yes,0.82,李四,非法场景标签
 IMG_0027,outdoor,flat,backlight,none,yes,0.83,张三,逆光场景
