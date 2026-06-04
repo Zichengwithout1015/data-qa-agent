@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html><head><meta charset=utf-8>
+<title>庄子程 - AI产品作品集</title>
+<style>
+body { font-family: Microsoft YaHei, sans-serif; max-width: 800px; margin: 40px auto; color: #222; line-height: 1.9; }
+h1 { font-size: 26px; border-bottom: 2px solid #222; padding-bottom: 10px; }
+h2 { font-size: 19px; margin-top: 32px; }
+h3 { font-size: 16px; }
+table { border-collapse: collapse; width: 100%; margin: 14px 0; }
+th, td { border: 1px solid #ccc; padding: 8px 12px; text-align: left; font-size: 14px; }
+th { background: #f5f5f5; font-weight: bold; }
+code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-size: 13px; }
+hr { border: none; border-top: 1px dashed #ccc; margin: 50px 0; }
+.header { color: #666; font-size: 14px; margin-bottom: 30px; }
+</style></head><body>
+<div class=header>庄子程 | AI产品作品集 | github.com/Zichengwithout1015</div>
+
+<h1>Agent 产品文档</h1>
+<p>﻿# 数据标注质检工具 - 产品需求文档（PRD）</p>
+<p><strong>作者</strong>：庄子程 | <strong>日期</strong>：2026.05 | <strong>版本</strong>：v1.0</p>
+<hr />
+<h2>1. 背景与问题定义</h2>
+<p>在机器人数据采集项目中，标注环节是模型训练的关键上游。实际作业中，人工标注存在三类高频问题：</p>
+<ul>
+<li><strong>漏标</strong>：标注员跳过必填字段（如场景类型、光照条件），导致数据不可用</li>
+<li><strong>误标</strong>：标签值与标注规范不符（如夜间场景标为强光），影响模型推理准确率</li>
+<li><strong>批量复制</strong>：标注员为追赶进度，将前一条标注直接复制，造成连续数据失真</li>
+</ul>
+<p>人工抽查覆盖率不足 10%，且单次审查耗时 30 分钟以上。需要一个自动化工具替代人工做第一轮筛查。</p>
+<hr />
+<h2>2. 目标用户与使用场景</h2>
+<table>
+<thead>
+<tr>
+<th>用户角色</th>
+<th>使用场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>数据运营</td>
+<td>每日接收标注团队提交的 CSV 数据，上传后一键质检，导出异常清单发给标注员修正</td>
+</tr>
+<tr>
+<td>算法工程师</td>
+<td>训练前快速校验数据集质量，确认无系统性标注偏差</td>
+</tr>
+<tr>
+<td>项目经理</td>
+<td>周报/月报引用质检通过率，评估标注团队产出质量</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>3. 核心功能</h2>
+<h3>3.1 自动化规则检查（6 项）</h3>
+<table>
+<thead>
+<tr>
+<th>规则</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>必填字段检查</td>
+<td>标注规范的必需字段是否为空</td>
+<td>lighting 字段缺失</td>
+</tr>
+<tr>
+<td>数据类型校验</td>
+<td>数值字段是否填了非数字内容</td>
+<td>confidence 填写了 "high"</td>
+</tr>
+<tr>
+<td>标签合法性验证</td>
+<td>枚举值是否在允许范围内</td>
+<td>scene=unknown（不在允许列表中）</td>
+</tr>
+<tr>
+<td>数值范围检查</td>
+<td>数值是否超出合理区间</td>
+<td>confidence=1.5（超出 0-1 范围）</td>
+</tr>
+<tr>
+<td>重复数据检测</td>
+<td>连续 N 条标注完全相同</td>
+<td>连续 4 条 scene/surface/lighting 完全一致</td>
+</tr>
+<tr>
+<td>语义冲突检测</td>
+<td>两个标签的组合是否逻辑矛盾</td>
+<td>scene=night + lighting=bright 不可能同时出现</td>
+</tr>
+</tbody>
+</table>
+<h3>3.2 规则与 LLM 分流策略</h3>
+<ul>
+<li><strong>规则引擎</strong>：处理高频、确定性的检查项（字段缺失、格式错误、数值越界），零成本，即时响应</li>
+<li><strong>LLM 推理</strong>：处理规则难以穷举的模糊判断（如语义冲突、标签描述的合理性），按需调用</li>
+</ul>
+<h3>3.3 交互方式</h3>
+<ul>
+<li>Web 看板（Streamlit）：上传 CSV → 一键质检 → 异常明细表格</li>
+<li>自然语言对话：用户可直接输入"检查数据""导出报告"等指令，Agent 自动调度工具执行</li>
+</ul>
+<hr />
+<h2>4. 效果与现状</h2>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>上线前（人工）</th>
+<th>上线后（工具）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>单次审查耗时</td>
+<td>30 分钟</td>
+<td>&lt;5 秒</td>
+</tr>
+<tr>
+<td>覆盖率</td>
+<td>&lt;10%</td>
+<td>100%</td>
+</tr>
+<tr>
+<td>错误发现率</td>
+<td>依赖抽查</td>
+<td>全量扫描无遗漏</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>在线演示：https://data-app-agent-ahlxf7pzdqif5herjl4tvg.streamlit.app</li>
+<li>源码：https://github.com/Zichengwithout1015/data-qa-agent</li>
+</ul>
+<hr />
+<h2>5. 后续规划</h2>
+<table>
+<thead>
+<tr>
+<th>优先级</th>
+<th>方向</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P0</td>
+<td>批量数据处理</td>
+<td>当前单次加载上限受限于内存，需改为分批读取</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>异常分类与统计分析</td>
+<td>增加标注员维度的错误率统计，定位是个人问题还是规范问题</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>接入更多数据类型</td>
+<td>支持图片/视频元数据校验，而非仅 CSV</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>6. 个人总结</h2>
+<p>这个项目让我完整走了一遍产品从 0 到 1 的流程：发现真实问题 → 定义用户场景 → 设计解决方案 → 开发落地 → 部署上线。过程中最大的收获是理解了"规则的边界"——规则能覆盖的走规则，覆盖不了的交给模型，这个判断本身就是一个产品决策。</p>
+<hr>
+<h1>小红书项目复盘</h1>
+<p>﻿# AI 驱动的小红书内容运营与知识付费 - 项目复盘报告</p>
+<p><strong>作者</strong>：庄子程 | <strong>时间跨度</strong>：2024.05-2026.01</p>
+<hr />
+<h2>1. 项目概述</h2>
+<p>独立运营个人小红书账号，全流程使用 AI 工具替代人工完成选题策划、文案生成、配图制作和数据分析。在此基础上，与互联网博主合作搭建了知识付费交付体系，将运营经验转化为标准化课程，累计营收超 10 万元。</p>
+<hr />
+<h2>2. AI 工具链设计</h2>
+<table>
+<thead>
+<tr>
+<th>环节</th>
+<th>工具</th>
+<th>选型原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>选题策划</td>
+<td>DeepSeek</td>
+<td>输入历史爆款数据，批量生成选题库，再人工筛选</td>
+</tr>
+<tr>
+<td>文案生成</td>
+<td>DeepSeek + 豆包</td>
+<td>DeepSeek 生成初稿，豆包做润色和风格调整，覆盖不同口吻</td>
+</tr>
+<tr>
+<td>配图制作</td>
+<td>Midjourney + 豆包生图</td>
+<td>Midjourney 主攻质感要求高的图，豆包生图处理快速出图需求</td>
+</tr>
+<tr>
+<td>数据分析</td>
+<td>Excel + AI 辅助</td>
+<td>每日拉取后台数据，AI 分析爆款共性并输出优化建议</td>
+</tr>
+</tbody>
+</table>
+<p>为什么这样设计：不同环节对 AI 能力的要求不同——选题需要创造力和趋势判断（DeepSeek），润色需要语言细腻度（豆包），配图需要画质和风格控制（Midjourney）。用单一工具覆盖全链路反而低效。</p>
+<hr />
+<h2>3. 数据驱动的迭代闭环</h2>
+<p>每日固定动作：拉取曝光量、互动率、收藏数 → 对比表现最好和最差的笔记 → 让 DeepSeek 输出差异分析 → 优化下一篇的选题方向和 prompt。</p>
+<p>这个闭环带来的洞察：<strong>标题的关键词比封面图更决定点开率</strong>。某几篇爆款笔记的共同特征不是图好看，而是标题里嵌入了用户搜索高频词。后续所有选题都从"用户会搜什么"出发，而非"我觉得什么好"。</p>
+<hr />
+<h2>4. 知识付费：从个人经验到可交付产品</h2>
+<p>难点：自己的经验如何教给别人？</p>
+<p>解决路径：
+- 将运营流程拆成 4 个标准化环节：选题 → 生成 → 发布 → 复盘
+- 每个环节给出可复制的 prompt 模板和数据判断标准
+- 与互联网博主合作，其前端流量导入后端课程交付</p>
+<p>结果：知识付费收入占总营收超过一半。证明了这套 AI 内容生产方法可以规模化复制。</p>
+<hr />
+<h2>5. 关键数据</h2>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>数据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>累计发布笔记</td>
+<td>1000+ 篇</td>
+</tr>
+<tr>
+<td>单篇最高阅读量</td>
+<td>35 万</td>
+</tr>
+<tr>
+<td>账号总曝光量</td>
+<td>超过 1000 万</td>
+</tr>
+<tr>
+<td>粉丝数</td>
+<td>2650 人</td>
+</tr>
+<tr>
+<td>累计营收</td>
+<td>超过 10 万元</td>
+</tr>
+<tr>
+<td>内容生产效率</td>
+<td>从 2 小时/条 → 30 分钟/条（提升 4 倍）</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>6. 个人收获</h2>
+<p>这个项目让我深刻理解了"AI 不是替代人，是改变人的工作方式"。我自己就是那个被改变的人——从手动写稿到用 AI 搭出一条内容生产线。最有价值的不是涨了多少粉丝，而是学会了把直觉型的事情变成流程型的系统。这个思维方式对做 AI 产品同样适用：不是给用户一个聊天框，而是把 AI 嵌入到他们已有的工作流里。</p>
+</body></html>
